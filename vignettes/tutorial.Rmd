@@ -1,0 +1,89 @@
+---
+title: "Quick Guide to SEEK-VEC"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi=300,
+  fig.width = 4,
+  fig.height = 4
+)
+```
+
+## Getting started
+
+Install and load the R package `seekvec` from the Github page [rdanning/seekvec](https://github.com/rdanning/seekvec) and load the package for the topic modeling algorithm of your choice (for this example we will use the [TopicScore](https://cran.r-project.org/web/packages/TopicScore/index.html) package).
+
+```{r install, eval = FALSE}
+library(devtools)
+library(usethis)
+
+install_github("rdanning/seekvec")
+```
+```{r load}
+library(seekvec)
+library(TopicScore)
+```
+
+## Load and clean example data
+
+For this tutorial, we will use the [MADStat-Text](https://github.com/ZhengTracyKe/MADStat-Text/blob/main/MADStaText/TextCorpusFinal.RData) dataset from Ke et al. [1] The dataset contains the corpus matrix corresponding to a collection of 83,331 statistical abstracts and a vocabulary of 2,106 words. Detailed information about the dataset can be found [here](https://www.tracyke.net/software/MADStat/ReadMe-for-MADStatPart2.pdf).
+
+```{r load-data-hidden, echo = FALSE}
+load("~/Downloads/TextCorpusFinal.RData")
+```
+
+```{r load-data, eval = FALSE}
+load("TextCorpusFinal.RData")
+```
+
+We remove abstracts that do not contain any of the vocabulary words, leaving 81,425 abstracts.
+
+```{r clean-data, warning=FALSE}
+D <- as.matrix(TDM)
+D <- D[, colSums(D) > 0]
+vocabulary <- dimnames(D)$Terms
+```
+
+## Run SEEK-VEC
+
+Suppose we wish to consider models with $K=\{3,...,10\}$. We choose a threshold of 10 top words per topic and run SEEK-VEC as follows:
+
+```{r run-seek, warning=FALSE}
+SEEK.out <- run_SEEK(D, 3:10, method = "ts", threshold = 10)
+```
+
+## Analyze output
+
+We can plot a heatmap to view the structure of the ensemble matrix. We choose a filter value of 0.5, which represents a weighted-majority consensus of a relationship between two words.
+
+```{r plot-seek}
+plot_results(SEEK.out, vocabulary, filter.value = 0.5, font.size = 4)
+```
+
+We can also view the words with the strongest signal:
+
+```{r top-words-df}
+signal.df <- extract_diagonals(SEEK.out, vocabulary)
+signal.df[rev(order(signal.df$value))[1:10],]
+```
+
+Suppose we examine the candidate topic models and decide that the model with $K=7$ is the most interpretable. We can examine the stability of these derived topics with respect to the ensemble matrix:
+
+```{r stability}
+K7.stability <- assess_stability(SEEK.out, vocabulary, K = 7, n.top.words = 5, font.size = 2)
+K7.stability$plot
+K7.stability$block.stability
+```
+
+As shown by the heatmap and the stability metrics, only one of these topics is highly robust to the choice of $K$. 
+
+## References
+1. Ke, Z. T., Ji, P., Jin, J. & Li, W. Recent Advances in Text Analysis. Annual Review of Statistics and Its Application 11, 347–372. http://dx.doi.org/10.1146/annurev-statistics-040522-022138 (Apr. 2024).
