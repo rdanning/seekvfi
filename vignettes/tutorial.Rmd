@@ -1,0 +1,110 @@
+---
+title: "Quick Guide to SEEK-VFI"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+set.seed(78)
+```
+
+## Getting started
+
+Install and load the R package `seekvfi` from the Github page [rdanning/seekvfi](https://github.com/rdanning/seekvfi).
+
+```{r install, eval = FALSE}
+library(devtools)
+library(usethis)
+
+install_github("rdanning/seekvfi")
+```
+```{r load, warning = FALSE, message=FALSE}
+library(seekvfi)
+library(tidyverse)
+```
+
+## Load example data
+
+For this tutorial, we will use the fibroblast reprogramming [dataset](https://zenodo.org/records/1443566) from Treutlein et al. [1] The dataset contains the expression counts of 3379 genes measured on 355 cells. Detailed information about the dataset can be found [here](https://www.nature.com/articles/nature18323).
+
+```{r load-data-hidden, echo = FALSE}
+data <- readRDS(paste0("~/Desktop/Trajectory methods/Datasets/fibroblast-reprogramming_treutlein.rds"))
+```
+
+```{r load-data, eval = FALSE}
+load("fibroblast-reprogramming_treutlein.rds")
+```
+```{r clean-data}
+counts <- t(data$counts)
+cell.labels <- data$cell_info$milestone_id
+cell.labels <- factor(cell.labels, levels =
+                        c("MEF",
+                          "d2_intermediate",
+                          "d2_induced",
+                          "d5_intermediate",
+                          "d5_earlyiN",
+                          "Neuron",
+                          "Myocyte")
+                      )
+```
+
+## Run SEEK-VFI
+
+Suppose we wish to consider trajectories with $K=\{3,...,12\}$ nodes. We run SEEK-VFI as follows:
+
+```{r run-seek, warning=FALSE, message=FALSE}
+seek.scores <- run_seekvfi(counts, 3:12)
+```
+
+## Analyze output
+
+We can compare the PCA embeddings of the data using all genes compared to using the top 1000 SEEK-VFI genes:
+
+```{r run-plots, warning=FALSE}
+expression <- as.matrix(data$expression)
+
+all.pca.df <- prcomp(t(expression))$rotation[,1:2] %>%
+  as.data.frame()
+all.pca.df$cls <- cell.labels
+
+seek.genes <- (seek.scores %>% arrange(desc(SV.score)))$gene[1:1000]
+seek.idx <- colnames(expression) %in% seek.genes
+
+seek.pca.df <- prcomp(t(expression[,seek.idx]))$rotation[,1:2] %>%
+  as.data.frame()
+seek.pca.df$cls <- cell.labels
+
+```
+
+```{r plots-all, fig.width=6, fig.height=5}
+ggplot(all.pca.df, aes(x = PC1, y = PC2, color = cls)) +
+  geom_point(size = 2) +
+  theme_bw() +
+  xlab("PC1") +
+  ylab("PC2") +
+  theme(legend.title = element_blank()) +
+  ggtitle("All genes")
+```
+
+```{r plots-seek, fig.width=6, fig.height=5}
+ggplot(seek.pca.df, aes(x = PC1, y = PC2, color = cls)) +
+  geom_point(size = 2) +
+  theme_bw() +
+  xlab("PC1") +
+  ylab("PC2") +
+  theme(legend.title = element_blank()) +
+  ggtitle("Top 1000 SEEK-VFI genes")
+```
+
+Restricting to the top 1000 SEEK-VFI genes allows the PCA embedding to more clearly demonstrate the differentiation of the precursor cells into mature neurons and myoctes.
+
+## References
+1. Treutlein, B. et al. Dissecting direct reprogramming from fibroblast to neuron using single-cell RNA-seq. Nature 534, 391–395. issn: 1476-4687. http://dx.doi.org/10.1038/nature18323 (June 2016).

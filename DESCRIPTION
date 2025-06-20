@@ -1,0 +1,17 @@
+Package: seekvfi
+Title: Variable Feature Identification for Trajectory-Relevant Genes
+Version: 0.0.0.9000
+Authors@R: 
+    person("Rebecca", "Danning", email = "rebecca_danning@harvard.edu", role = c("aut", "cre"))
+Description: Code for implementing SEEK-VFI (Spectral Ensembling of topic models with
+    Eigenscore for K-agnostic Variable Feature Identification).
+License: use_mit_license()
+Imports:
+    TopicScore
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
