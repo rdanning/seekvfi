@@ -22,38 +22,29 @@ Install and load the R package `seekvfi` from the Github page [rdanning/seekvfi]
 
 ```{r install, eval = FALSE}
 library(devtools)
-library(usethis)
 
 install_github("rdanning/seekvfi")
 ```
 ```{r load, warning = FALSE, message=FALSE}
 library(seekvfi)
 library(tidyverse)
+library(umap)
 ```
 
 ## Load example data
 
-For this tutorial, we will use the fibroblast reprogramming [dataset](https://zenodo.org/records/1443566) from Treutlein et al. [1] The dataset contains the expression counts of 3379 genes measured on 355 cells. Detailed information about the dataset can be found [here](https://www.nature.com/articles/nature18323).
+For this tutorial, we will use the kidney collecting duct [dataset](https://zenodo.org/records/1443566) from Park et al. [1] The dataset contains the expression counts of 3379 genes measured on 355 cells. Detailed information about the dataset can be found [here](https://www.science.org/doi/10.1126/science.aar2131).
 
 ```{r load-data-hidden, echo = FALSE}
-data <- readRDS(paste0("~/Desktop/Trajectory methods/Datasets/fibroblast-reprogramming_treutlein.rds"))
+data <- readRDS(paste0("~/Desktop/Trajectory methods/Datasets/kidney-collecting-duct-subclusters_park.rds"))
 ```
 
 ```{r load-data, eval = FALSE}
-load("fibroblast-reprogramming_treutlein.rds")
+data <- readRDS("kidney-collecting-duct-subclusters_park.rds")
 ```
 ```{r clean-data}
 counts <- t(data$counts)
-cell.labels <- data$cell_info$milestone_id
-cell.labels <- factor(cell.labels, levels =
-                        c("MEF",
-                          "d2_intermediate",
-                          "d2_induced",
-                          "d5_intermediate",
-                          "d5_earlyiN",
-                          "Neuron",
-                          "Myocyte")
-                      )
+cell.labels <- data$cell_info$cluster_id
 ```
 
 ## Run SEEK-VFI
@@ -66,45 +57,49 @@ seek.scores <- run_seekvfi(counts, 3:12)
 
 ## Analyze output
 
-We can compare the PCA embeddings of the data using all genes compared to using the top 1000 SEEK-VFI genes:
+We can compare the UMAP embeddings of the data using all genes compared to using the top 1000 SEEK-VFI genes:
 
 ```{r run-plots, warning=FALSE}
 expression <- as.matrix(data$expression)
 
-all.pca.df <- prcomp(t(expression))$rotation[,1:2] %>%
-  as.data.frame()
-all.pca.df$cls <- cell.labels
+all.umap.fit <- expression %>%
+   umap()
+all.umap.df <- all.umap.fit$layout %>%
+   as.data.frame()
+all.umap.df$cls <- cell.labels
 
 seek.genes <- (seek.scores %>% arrange(desc(SV.score)))$gene[1:1000]
 seek.idx <- colnames(expression) %in% seek.genes
 
-seek.pca.df <- prcomp(t(expression[,seek.idx]))$rotation[,1:2] %>%
+seek.umap.fit <- expression[,seek.idx] %>%
+  umap()
+seek.umap.df <- seek.umap.fit$layout %>%
   as.data.frame()
-seek.pca.df$cls <- cell.labels
+seek.umap.df$cls <- cell.labels
 
 ```
 
 ```{r plots-all, fig.width=6, fig.height=5}
-ggplot(all.pca.df, aes(x = PC1, y = PC2, color = cls)) +
+ggplot(all.umap.df, aes(x = V1, y = V2, color = cls)) +
   geom_point(size = 2) +
   theme_bw() +
-  xlab("PC1") +
-  ylab("PC2") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
   theme(legend.title = element_blank()) +
   ggtitle("All genes")
 ```
 
 ```{r plots-seek, fig.width=6, fig.height=5}
-ggplot(seek.pca.df, aes(x = PC1, y = PC2, color = cls)) +
+ggplot(seek.umap.df, aes(x = V1, y = V2, color = cls)) +
   geom_point(size = 2) +
   theme_bw() +
-  xlab("PC1") +
-  ylab("PC2") +
+  xlab("UMAP1") +
+  ylab("UMAP2") +
   theme(legend.title = element_blank()) +
   ggtitle("Top 1000 SEEK-VFI genes")
 ```
 
-Restricting to the top 1000 SEEK-VFI genes allows the PCA embedding to more clearly demonstrate the differentiation of the precursor cells into mature neurons and myoctes.
+Restricting to the top 1000 SEEK-VFI genes allows the UMAP embedding to more clearly demonstrate the role of the newly-discovered transitional cells in the developmental trajectory.
 
 ## References
-1. Treutlein, B. et al. Dissecting direct reprogramming from fibroblast to neuron using single-cell RNA-seq. Nature 534, 391–395. issn: 1476-4687. http://dx.doi.org/10.1038/nature18323 (June 2016).
+1. Park, J. et al. Single-cell transcriptomics of the mouse kidney reveals potential cellular targets of kidney disease. Science 360, 6390:758-763. http://dx.doi.org/10.1126/science.aar2131 (May 2018).
