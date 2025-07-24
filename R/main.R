@@ -1,5 +1,5 @@
 #' Main function to run SEEK-VFI
-#' 
+#'
 #' @param D A genes x cells expression count matrix with gene names as the rownames.
 #' @param Ks List of candidate values of K.
 #' @returns A data frame containing the SEEK-VFI scores of each gene
@@ -7,18 +7,18 @@
 #' seekvfi(D, 3:12)
 #' @export
 run_seekvfi <- function(D, Ks){
-  
+
   # check for valid inputs
   check.inputs(D,Ks)
-  
+
   # run topic models and convert output to joint hallmark projection matrices
   topic.matrices <- sapply(unique(Ks), get.topic.matrix, D)
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
-  
+
   # ensemble sparsity vectors
   scores <- get.scores(sparsity.vectors)
-  
+
   # return output
   return(data.frame(gene = rownames(D),
                     SV.score = scores))
@@ -46,10 +46,12 @@ get.topic.matrix <- function(K, D){
   return(TopicScore::topic_score(K, prop.table(D,2))$A_hat)
 }
 
-# helper function to extract sparsity
+# helper function to extract sparsity, rescaled from [1/K,1] to [0,1]
 get.sparsity <- function(i,m){
   v <- m[i,]
-  return(sum(v*v))
+  K <- ncol(m)
+  s <- (sum(v*v)-(1/K))/(1-(1/K))
+  return(s)
 }
 
 # function to extract sparsity vectors
