@@ -12,7 +12,8 @@ run_seekvfi <- function(D, Ks){
   check.inputs(D,Ks)
 
   # run topic models and convert output to joint hallmark projection matrices
-  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D)
+  SVD.out <- run_svd(D,max(Ks))
+  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D, SVD.out)
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 
@@ -41,9 +42,9 @@ check.inputs <- function(D, Ks){
 }
 
 # function to run topic modeling with the given K
-get.topic.matrix <- function(K, D){
+get.topic.matrix <- function(K, D, SVD.out){
   print(paste0("Fitting a topic model with ",K," topics"))
-  return(TopicScore::topic_score(K, prop.table(D,2))$A_hat)
+  return(run_TopicScore(K, prop.table(D,2),SVD.out))
 }
 
 # helper function to extract sparsity, rescaled from [1/K,1] to [0,1]
