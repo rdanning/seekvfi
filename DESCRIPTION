@@ -8,7 +8,7 @@ Description: Code for implementing SEEK-VFI (Spectral Ensembling of topic models
 License: use_mit_license()
 Imports:
     R.matlab,
-    rARPACK,
+    RSpectra,
     nnls,
     quadprog
 Encoding: UTF-8
