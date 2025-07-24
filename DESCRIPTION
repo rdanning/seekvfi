@@ -7,9 +7,7 @@ Description: Code for implementing SEEK-VFI (Spectral Ensembling of topic models
     Eigenscore for K-agnostic Variable Feature Identification).
 License: use_mit_license()
 Imports:
-    R.matlab,
     RSpectra,
-    nnls,
     quadprog
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
