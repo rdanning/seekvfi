@@ -50,7 +50,7 @@ simplex_dist <- function(theta, V){
   A <- cbind(diag(rep(1,dim(V)[1]-1)), -rep(1,dim(V)[1]-1))
   b0 <- c(rep(0,dim(V)[1]-1),-1)
 
-  obj <- solve.QP(D, d, A, b0)
+  obj <- quadprog::solve.QP(D, d, A, b0)
   return(sum((theta-V[dim(V)[1],]) ^2)+ 2*obj$value)
 }
 
