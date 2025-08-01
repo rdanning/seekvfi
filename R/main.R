@@ -47,11 +47,10 @@ get.topic.matrix <- function(K, D, SVD.out){
   return(run_TopicScore(K, prop.table(D,2),SVD.out))
 }
 
-# helper function to extract sparsity, rescaled from [1/K,1] to [0,1]
+# helper function to extract sparsity
 get.sparsity <- function(i,m){
   v <- m[i,]
-  K <- ncol(m)
-  s <- (sum(v*v)-(1/K))/(1-(1/K))
+  s <- sum(v*v)
   return(s)
 }
 
