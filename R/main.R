@@ -6,10 +6,13 @@
 #' @examples
 #' seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(D, Ks){
+run_seekvfi <- function(counts, Ks){
 
   # check for valid inputs
-  check.inputs(D,Ks)
+  check.inputs(counts,Ks)
+
+  # column-normalize
+  D <- prop.table(counts,2)
 
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
@@ -21,7 +24,7 @@ run_seekvfi <- function(D, Ks){
   scores <- get.scores(sparsity.vectors)
 
   # return output
-  return(data.frame(gene = rownames(D),
+  return(data.frame(gene = rownames(counts),
                     SV.score = scores))
 }
 
@@ -44,7 +47,7 @@ check.inputs <- function(D, Ks){
 # function to run topic modeling with the given K
 get.topic.matrix <- function(K, D, SVD.out){
   print(paste0("Fitting a topic model with ",K," topics"))
-  return(run_TopicScore(K, prop.table(D,2),SVD.out))
+  return(run_TopicScore(K, D, SVD.out))
 }
 
 # helper function to extract sparsity
