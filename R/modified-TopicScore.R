@@ -1,8 +1,16 @@
 #' Lightly-modified TopicScore code
 #' Adapted from https://github.com/cran/TopicScore/blob/master/R/topic_score.R
-#' Optimizes running multiple models by calculating the singular values once
+#' Optimizes running multiple models by calculating the singular values once; vectorizes for-loops where possible
 #' TopicScore paper: Ke, Z. T. & Wang, M. Using SVD for Topic Modeling. Journal of the American Statistical Association 119, 434–449. http://dx.doi.org/10.1080/01621459.2022.2123813 (Oct. 2022).
 
+mvm <- function(i,j,theta,comb){
+  return(simplex_dist(as.matrix(theta[j,]), as.matrix(theta[comb[,i],])))
+}
+
+mvm_col <- function(i, jmax ,theta,comb){
+  row <- sapply(1:jmax, mvm, i, theta, comb)
+  return(row)
+}
 
 vertices_est <- function(R,K0,m,num_start){
   K <- dim(R)[2] + 1
@@ -30,16 +38,12 @@ vertices_est <- function(R,K0,m,num_start){
   }
 
   comb <- combn(1:K0, K)
-  max_values <- rep(0, dim(comb)[2])
-  for (i in 1:dim(comb)[2]){
-    for (j in 1:K0){
-      max_values[i] <- max(simplex_dist(as.matrix(theta[j,]), as.matrix(theta[comb[,i],])), max_values[i])
-    }
-  }
-
+  max_values_matrix <- sapply(1:K0, mvm_col, dim(comb)[2], theta, comb)
+  max_values <- apply(max_values_matrix,1,max)
   min_index <- which(max_values == min(max_values))
 
   return(list(V=theta[comb[,min_index[1]],], theta=theta_original))
+
 }
 
 simplex_dist <- function(theta, V){
