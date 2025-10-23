@@ -1,10 +1,10 @@
 #' Lightly-modified TopicScore code
 #' Adapted from https://github.com/cran/TopicScore/blob/master/R/topic_score.R
-#' Optimizes running multiple models by calculating the singular values once
+#' Optimizes running multiple models by calculating the singular values once; parallelizes some of the vertex hunting steps
 #' TopicScore paper: Ke, Z. T. & Wang, M. Using SVD for Topic Modeling. Journal of the American Statistical Association 119, 434–449. http://dx.doi.org/10.1080/01621459.2022.2123813 (Oct. 2022).
 
 
-vertices_est <- function(R,K0,m,num_start){
+vertices_est <- function(R,K0,m,num_start,parallel = TRUE){
   K <- dim(R)[2] + 1
 
   obj <- kmeans(R,m,iter.max=100,nstart=num_start)
@@ -31,15 +31,45 @@ vertices_est <- function(R,K0,m,num_start){
 
   comb <- combn(1:K0, K)
   max_values <- rep(0, dim(comb)[2])
-  for (i in 1:dim(comb)[2]){
-    for (j in 1:K0){
-      max_values[i] <- max(simplex_dist(as.matrix(theta[j,]), as.matrix(theta[comb[,i],])), max_values[i])
-    }
+
+  if(parallel){
+    plan(multisession)
+    mapper <- furrr::future_map2_dbl
+  } else{
+    mapper <- purrr::map2_dbl
   }
+
+
+  start2 <- Sys.time()
+  is <- 1:dim(comb)[2]
+  js <- 1:K0
+  grid <- matrix(mapper(rep(is,times = length(js)),
+                   rep(js, each = length(is)),
+                   simplex_dist_parallel,
+                   theta),
+                 nrow = length(is))
+  max_values <- apply(grid,1,max)
+  end2 <- Sys.time()
+
   min_index <- which(max_values == min(max_values))
 
   return(list(V=theta[comb[,min_index[1]],], theta=theta_original))
 
+}
+
+simplex_dist_parallel <- function(i,j, theta0){
+  theta <- as.matrix(theta0[j,])
+  V <- as.matrix(theta0[comb[,i],])
+
+  VV <- cbind(diag(rep(1,dim(V)[1]-1)), -rep(1,dim(V)[1]-1))%*%V
+  D <- VV%*%t(VV)
+  d <- VV%*%(theta-V[dim(V)[1],])
+
+  A <- cbind(diag(rep(1,dim(V)[1]-1)), -rep(1,dim(V)[1]-1))
+  b0 <- c(rep(0,dim(V)[1]-1),-1)
+
+  obj <- quadprog::solve.QP(D, d, A, b0)
+  return(sum((theta-V[dim(V)[1],]) ^2)+ 2*obj$value)
 }
 
 simplex_dist <- function(theta, V){
@@ -64,7 +94,7 @@ run_svd <- function(D, max.K, Mquantile=0){
               M_trunk=M_trunk))
 }
 
-run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1){
+run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1, parallel = TRUE){
 
   Xi <- SVD.out$Xi
   M_trunk <- SVD.out$M_trunk
@@ -82,7 +112,7 @@ run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1){
   R <- apply(Xi[,2:K],2,function(x) x/Xi[,1])
 
   #Step 2
-  vertices_est_obj <- vertices_est(R,K0,m,num_start)
+  vertices_est_obj <- vertices_est(R,K0,m,num_start,parallel)
   V <- vertices_est_obj$V
   theta <- vertices_est_obj$theta
 
