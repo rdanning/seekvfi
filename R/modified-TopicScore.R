@@ -72,7 +72,7 @@ run_svd <- function(D, max.K, Mquantile=0){
               M_trunk=M_trunk))
 }
 
-run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1, mapper){
+run_TopicScore <- function(K, D, SVD.out, mapper, Mquantile=0, num_start = 1){
 
   Xi <- SVD.out$Xi
   M_trunk <- SVD.out$M_trunk
