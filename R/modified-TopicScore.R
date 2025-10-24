@@ -4,7 +4,7 @@
 #' TopicScore paper: Ke, Z. T. & Wang, M. Using SVD for Topic Modeling. Journal of the American Statistical Association 119, 434–449. http://dx.doi.org/10.1080/01621459.2022.2123813 (Oct. 2022).
 
 
-vertices_est <- function(R,K0,m,num_start,parallel = TRUE){
+vertices_est <- function(R,K0,m,num_start,mapper){
   K <- dim(R)[2] + 1
 
   obj <- kmeans(R,m,iter.max=100,nstart=num_start)
@@ -32,15 +32,6 @@ vertices_est <- function(R,K0,m,num_start,parallel = TRUE){
   comb <- combn(1:K0, K)
   max_values <- rep(0, dim(comb)[2])
 
-  if(parallel){
-    future::plan(future::multisession, workers = parallelly::availableCores())
-    mapper <- furrr::future_map2_dbl
-  } else{
-    mapper <- purrr::map2_dbl
-  }
-
-
-  start2 <- Sys.time()
   is <- 1:dim(comb)[2]
   js <- 1:K0
   grid <- matrix(mapper(rep(is,times = length(js)),
@@ -49,7 +40,6 @@ vertices_est <- function(R,K0,m,num_start,parallel = TRUE){
                    theta),
                  nrow = length(is))
   max_values <- apply(grid,1,max)
-  end2 <- Sys.time()
 
   min_index <- which(max_values == min(max_values))
 
@@ -72,18 +62,6 @@ simplex_dist_parallel <- function(i,j, theta0){
   return(sum((theta-V[dim(V)[1],]) ^2)+ 2*obj$value)
 }
 
-simplex_dist <- function(theta, V){
-  VV <- cbind(diag(rep(1,dim(V)[1]-1)), -rep(1,dim(V)[1]-1))%*%V
-  D <- VV%*%t(VV)
-  d <- VV%*%(theta-V[dim(V)[1],])
-
-  A <- cbind(diag(rep(1,dim(V)[1]-1)), -rep(1,dim(V)[1]-1))
-  b0 <- c(rep(0,dim(V)[1]-1),-1)
-
-  obj <- quadprog::solve.QP(D, d, A, b0)
-  return(sum((theta-V[dim(V)[1],]) ^2)+ 2*obj$value)
-}
-
 run_svd <- function(D, max.K, Mquantile=0){
   print("Computing SVD")
   M <- rowMeans(D)
@@ -94,7 +72,7 @@ run_svd <- function(D, max.K, Mquantile=0){
               M_trunk=M_trunk))
 }
 
-run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1, parallel = TRUE){
+run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1, mapper){
 
   Xi <- SVD.out$Xi
   M_trunk <- SVD.out$M_trunk
@@ -112,7 +90,7 @@ run_TopicScore <- function(K, D, SVD.out, Mquantile=0, num_start = 1, parallel =
   R <- apply(Xi[,2:K],2,function(x) x/Xi[,1])
 
   #Step 2
-  vertices_est_obj <- vertices_est(R,K0,m,num_start,parallel)
+  vertices_est_obj <- vertices_est(R,K0,m,num_start,mapper)
   V <- vertices_est_obj$V
   theta <- vertices_est_obj$theta
 

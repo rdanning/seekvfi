@@ -2,12 +2,24 @@
 #'
 #' @param D A genes x cells expression count matrix with gene names as the rownames.
 #' @param Ks List of candidate values of K.
-#' @param parallel Whether to parallelize within Topic-SCORE code (default true).
+#' @param parallel Whether to parallelize within Topic-SCORE code: one of c(FALSE, "cluster", "multisession"). Default value is FALSE.
 #' @returns A data frame containing the SEEK-VFI scores of each gene
 #' @examples
 #' seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(counts, Ks, parallel = TRUE){
+run_seekvfi <- function(counts, Ks, parallel = FALSE){
+
+  # plan future if running in parallel
+  if(parallel == "cluster"){
+    future::plan(future::cluster, workers = parallelly::availableCores())
+    mapper <- furrr::future_map2_dbl
+  }
+  if(parallel == "multisession"){
+    future::plan(future::multisession, workers = parallelly::availableCores())
+    mapper <- furrr::future_map2_dbl
+  } else{
+    mapper <- purrr::map2_dbl
+  }
 
   # check for valid inputs
   check.inputs(counts,Ks)
@@ -17,7 +29,7 @@ run_seekvfi <- function(counts, Ks, parallel = TRUE){
 
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
-  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D, SVD.out, parallel)
+  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D, SVD.out, mapper)
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 
@@ -46,9 +58,9 @@ check.inputs <- function(D, Ks){
 }
 
 # function to run topic modeling with the given K
-get.topic.matrix <- function(K, D, SVD.out, parallel){
+get.topic.matrix <- function(K, D, SVD.out, mapper){
   print(paste0("Fitting a topic model with ",K," topics"))
-  return(run_TopicScore(K, D, SVD.out, parallel))
+  return(run_TopicScore(K, D, SVD.out, mapper))
 }
 
 # helper function to extract sparsity
