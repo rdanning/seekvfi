@@ -33,7 +33,7 @@ vertices_est <- function(R,K0,m,num_start,parallel = TRUE){
   max_values <- rep(0, dim(comb)[2])
 
   if(parallel){
-    future::plan(future::multisession)
+    future::plan(future::multisession, workers = parallelly::availableCores())
     mapper <- furrr::future_map2_dbl
   } else{
     mapper <- purrr::map2_dbl
