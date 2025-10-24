@@ -12,10 +12,12 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE){
   # plan future if running in parallel
   if(parallel == "cluster"){
     future::plan(future::cluster, workers = parallelly::availableCores())
+    options(future.globals.maxSize = 8 * 1024^3)
     mapper <- furrr::future_map2_dbl
   }
   if(parallel == "multisession"){
     future::plan(future::multisession, workers = parallelly::availableCores())
+    options(future.globals.maxSize = 8 * 1024^3)
     mapper <- furrr::future_map2_dbl
   } else{
     mapper <- purrr::map2_dbl
