@@ -37,7 +37,8 @@ vertices_est <- function(R,K0,m,num_start,mapper){
   grid <- matrix(mapper(rep(is,times = length(js)),
                    rep(js, each = length(is)),
                    simplex_dist_parallel,
-                   theta),
+                   theta,
+                   comb),
                  nrow = length(is))
   max_values <- apply(grid,1,max)
 
@@ -47,7 +48,7 @@ vertices_est <- function(R,K0,m,num_start,mapper){
 
 }
 
-simplex_dist_parallel <- function(i,j, theta0){
+simplex_dist_parallel <- function(i,j, theta0, comb){
   theta <- as.matrix(theta0[j,])
   V <- as.matrix(theta0[comb[,i],])
 
