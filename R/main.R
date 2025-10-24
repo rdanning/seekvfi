@@ -7,20 +7,23 @@
 #' @examples
 #' seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(counts, Ks, parallel = FALSE){
+run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3){
 
   # plan future if running in parallel
   if(parallel == "cluster"){
     future::plan(future::cluster, workers = parallelly::availableCores())
-    options(future.globals.maxSize = 8 * 1024^3)
-    mapper <- furrr::future_map2_dbl
+    options(future.globals.maxSize = maxSize)
+    mapper1 <- furrr::future_map
+    mapper2 <- furrr::future_map2_dbl
   }
   if(parallel == "multisession"){
     future::plan(future::multisession, workers = parallelly::availableCores())
-    options(future.globals.maxSize = 8 * 1024^3)
-    mapper <- furrr::future_map2_dbl
+    options(future.globals.maxSize = maxSize)
+    mapper1 <- furrr::future_map
+    mapper2 <- furrr::future_map2_dbl
   } else{
-    mapper <- purrr::map2_dbl
+    mapper1 <- purrr::map
+    mapper2 <- purrr::map2_dbl
   }
 
   # check for valid inputs
@@ -31,7 +34,7 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE){
 
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
-  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D, SVD.out, mapper)
+  topic.matrices <- mapper1(unique(Ks), run_TopicScore, D, SVD.out, mapper2)
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 
@@ -42,6 +45,7 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE){
   return(data.frame(gene = rownames(counts),
                     SV.score = scores))
 }
+
 
 # function to check for valid inputs
 check.inputs <- function(D, Ks){
@@ -60,9 +64,9 @@ check.inputs <- function(D, Ks){
 }
 
 # function to run topic modeling with the given K
-get.topic.matrix <- function(K, D, SVD.out, mapper){
+get.topic.matrix <- function(K, D, SVD.out, mapper2){
   print(paste0("Fitting a topic model with ",K," topics"))
-  return(run_TopicScore(K, D, SVD.out, mapper))
+  return(run_TopicScore(K, D, SVD.out, mapper2))
 }
 
 # helper function to extract sparsity

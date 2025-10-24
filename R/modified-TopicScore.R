@@ -4,7 +4,7 @@
 #' TopicScore paper: Ke, Z. T. & Wang, M. Using SVD for Topic Modeling. Journal of the American Statistical Association 119, 434–449. http://dx.doi.org/10.1080/01621459.2022.2123813 (Oct. 2022).
 
 
-vertices_est <- function(R,K0,m,num_start,mapper){
+vertices_est <- function(R,K0,m,num_start,mapper2){
   K <- dim(R)[2] + 1
 
   obj <- kmeans(R,m,iter.max=100,nstart=num_start)
@@ -34,7 +34,7 @@ vertices_est <- function(R,K0,m,num_start,mapper){
 
   is <- 1:dim(comb)[2]
   js <- 1:K0
-  grid <- matrix(mapper(rep(is,times = length(js)),
+  grid <- matrix(mapper2(rep(is,times = length(js)),
                    rep(js, each = length(is)),
                    simplex_dist_parallel,
                    theta,
@@ -73,7 +73,7 @@ run_svd <- function(D, max.K, Mquantile=0){
               M_trunk=M_trunk))
 }
 
-run_TopicScore <- function(K, D, SVD.out, mapper, Mquantile=0, num_start = 1){
+run_TopicScore <- function(K, D, SVD.out, mapper2, Mquantile=0, num_start = 1){
 
   Xi <- SVD.out$Xi
   M_trunk <- SVD.out$M_trunk
@@ -91,7 +91,7 @@ run_TopicScore <- function(K, D, SVD.out, mapper, Mquantile=0, num_start = 1){
   R <- apply(Xi[,2:K],2,function(x) x/Xi[,1])
 
   #Step 2
-  vertices_est_obj <- vertices_est(R,K0,m,num_start,mapper)
+  vertices_est_obj <- vertices_est(R,K0,m,num_start,mapper2)
   V <- vertices_est_obj$V
   theta <- vertices_est_obj$theta
 
