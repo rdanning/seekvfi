@@ -1,3 +1,4 @@
+#' @export
 time_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3){
   
   # plan future if running in parallel
