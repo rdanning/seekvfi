@@ -2,12 +2,12 @@
 #'
 #' @param D A genes x cells expression count matrix with gene names as the rownames.
 #' @param Ks List of candidate values of K.
-#' @param parallel Whether to parallelize within Topic-SCORE code: one of c(FALSE, "cluster", "multisession"). Default value is FALSE.
+#' @param parallel Whether to parallelize within Topic-SCORE code: one of c(FALSE, "cluster", "multisession","multicore"). Default value is FALSE.
 #' @returns A data frame containing the SEEK-VFI scores of each gene
 #' @examples
 #' seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3){
+run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, just.time = FALSE){
 
   # plan future if running in parallel
   if(parallel == "cluster"){
@@ -35,6 +35,9 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3){
   # check for valid inputs
   check.inputs(counts,Ks)
 
+  # checkpoint for timing
+  start.time <- Sys.time()
+
   # column-normalize
   D <- prop.table(counts,2)
 
@@ -47,11 +50,16 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3){
   # ensemble sparsity vectors
   scores <- get.scores(sparsity.vectors)
 
+  # checkpoint for timing
+  end.time <- Sys.time()
+
+  # return runtime for benchmarking
+  if(just.time){return(as.numeric(difftime(end.time,start.time,units="secs")))}
+
   # return output
   return(data.frame(gene = rownames(counts),
                     SV.score = scores))
 }
-
 
 # function to check for valid inputs
 check.inputs <- function(D, Ks){
