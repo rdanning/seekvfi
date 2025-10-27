@@ -28,7 +28,7 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, seed
     future::plan(future::multisession)
     options(future.globals.maxSize = maxSize)
     mapper1 <- furrr::future_map
-    mapper2 <- furrr::future_map2_dbl
+    mapper2 <- purrr::map2_dbl
   } else{
     mapper1 <- purrr::map
     mapper2 <- purrr::map2_dbl
