@@ -7,7 +7,9 @@
 #' @examples
 #' seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, just.time = FALSE){
+run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, seed = 1, just.time = FALSE){
+
+  set.seed(seed)
 
   # plan future if running in parallel
   if(parallel == "cluster"){
@@ -43,7 +45,8 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, just
 
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
-  topic.matrices <- mapper1(unique(Ks), run_TopicScore, D, SVD.out, mapper2)
+  topic.matrices <- mapper1(unique(Ks), run_TopicScore, D, SVD.out, mapper2,
+                            .options=furrr_options(seed = TRUE))
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 

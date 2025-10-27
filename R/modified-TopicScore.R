@@ -91,7 +91,8 @@ run_TopicScore <- function(K, D, SVD.out, mapper2, Mquantile=0, num_start = 1){
   R <- apply(Xi[,2:K],2,function(x) x/Xi[,1])
 
   #Step 2
-  vertices_est_obj <- vertices_est(R,K0,m,num_start,mapper2)
+  vertices_est_obj <- vertices_est(R,K0,m,num_start,mapper2,
+                                   .options=furrr_options(seed = TRUE))
   V <- vertices_est_obj$V
   theta <- vertices_est_obj$theta
 
