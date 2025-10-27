@@ -38,8 +38,7 @@ vertices_est <- function(R,K0,m,num_start,mapper2){
                    rep(js, each = length(is)),
                    simplex_dist_parallel,
                    theta,
-                   comb,
-                   .options=furrr::furrr_options(seed = TRUE)),
+                   comb),
                  nrow = length(is))
   max_values <- apply(grid,1,max)
 
