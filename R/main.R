@@ -2,62 +2,28 @@
 #'
 #' @param D A genes x cells expression count matrix with gene names as the rownames.
 #' @param Ks List of candidate values of K.
-#' @param parallel Whether to parallelize within Topic-SCORE code: one of c(FALSE, "cluster", "multisession","multicore"). Default value is FALSE.
 #' @returns A data frame containing the SEEK-VFI scores of each gene
 #' @examples
 #' seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, seed = 1, just.time = FALSE){
+run_seekvfi <- function(counts, Ks, seed = 1){
 
   set.seed(seed)
 
-  # plan future if running in parallel
-  if(parallel == "cluster"){
-    future::plan(future::cluster)
-    options(future.globals.maxSize = maxSize)
-    mapper1 <- furrr::future_map
-    mapper2 <- furrr::future_map2_dbl
-  }
-  if(parallel == "multicore"){
-    future::plan(future::multicore)
-    options(future.globals.maxSize = maxSize)
-    mapper1 <- furrr::future_map
-    mapper2 <- furrr::future_map2_dbl
-  }
-  if(parallel == "multisession"){
-    future::plan(future::multisession)
-    options(future.globals.maxSize = maxSize)
-    mapper1 <- furrr::future_map
-    mapper2 <- purrr::map2_dbl
-  } else{
-    mapper1 <- purrr::map
-    mapper2 <- purrr::map2_dbl
-  }
-
   # check for valid inputs
   check.inputs(counts,Ks)
-
-  # checkpoint for timing
-  start.time <- Sys.time()
 
   # column-normalize
   D <- prop.table(counts,2)
 
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
-  topic.matrices <- mapper1(unique(Ks), run_TopicScore, D, SVD.out, mapper2,
-                            .options=furrr::furrr_options(seed = TRUE))
+  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D, SVD.out)
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 
   # ensemble sparsity vectors
   scores <- get.scores(sparsity.vectors)
-
-  # checkpoint for timing
-  end.time <- Sys.time()
-
-  # return runtime for benchmarking
-  if(just.time){return(as.numeric(difftime(end.time,start.time,units="secs")))}
 
   # return output
   return(data.frame(gene = rownames(counts),
@@ -81,9 +47,9 @@ check.inputs <- function(D, Ks){
 }
 
 # function to run topic modeling with the given K
-get.topic.matrix <- function(K, D, SVD.out, mapper2){
+get.topic.matrix <- function(K, D, SVD.out){
   print(paste0("Fitting a topic model with ",K," topics"))
-  return(run_TopicScore(K, D, SVD.out, mapper2))
+  return(run_TopicScore(K, D, SVD.out))
 }
 
 # helper function to extract sparsity
