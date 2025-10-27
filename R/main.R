@@ -46,7 +46,7 @@ run_seekvfi <- function(counts, Ks, parallel = FALSE, maxSize = 8 * 1024^3, seed
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
   topic.matrices <- mapper1(unique(Ks), run_TopicScore, D, SVD.out, mapper2,
-                            .options=furrr_options(seed = TRUE))
+                            .options=furrr::furrr_options(seed = TRUE))
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 
