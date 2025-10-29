@@ -2,11 +2,14 @@
 #'
 #' @param D A genes x cells expression count matrix with gene names as the rownames.
 #' @param Ks List of candidate values of K.
+#' @param im iter.max parameter for kmeans (default 100)
+#' @param ns start parameter for kmeans (default 1)
+#' @param seed Random seed (default 1)
 #' @returns A data frame containing the SEEK-VFI scores of each gene
 #' @examples
-#' seekvfi(D, 3:12)
+#' run_seekvfi(D, 3:12)
 #' @export
-run_seekvfi <- function(counts, Ks, seed = 1){
+run_seekvfi <- function(counts, Ks, ns = 1, im = 100, seed = 1){
 
   set.seed(seed)
 
@@ -18,7 +21,9 @@ run_seekvfi <- function(counts, Ks, seed = 1){
 
   # run topic models and convert output to joint hallmark projection matrices
   SVD.out <- run_svd(D,max(Ks))
-  topic.matrices <- sapply(unique(Ks), get.topic.matrix, D, SVD.out)
+  topic.matrices <- sapply(unique(Ks),
+                           get.topic.matrix,
+                           D,SVD.out,ns,im,seed)
   loadings.matrices <- lapply(topic.matrices, prop.table, 1)
   sparsity.vectors <- lapply(loadings.matrices, get.svs)
 
@@ -47,9 +52,9 @@ check.inputs <- function(D, Ks){
 }
 
 # function to run topic modeling with the given K
-get.topic.matrix <- function(K, D, SVD.out){
+get.topic.matrix <- function(K, D, SVD.out, ns, im, seed){
   print(paste0("Fitting a topic model with ",K," topics"))
-  return(run_TopicScore(K, D, SVD.out))
+  return(run_TopicScore(K,D,SVD.out,ns,im,seed))
 }
 
 # helper function to extract sparsity
