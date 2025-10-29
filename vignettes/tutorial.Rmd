@@ -52,14 +52,14 @@ cell.labels <- data$cell_info$cluster_id
 Suppose we wish to consider trajectories with $K=\{3,...,12\}$ nodes. We run SEEK-VFI as follows:
 
 ```{r run-seek, warning=FALSE, message=FALSE}
-seek.scores <- run_seekvfi(counts, 3:12)
+seek.scores <- run_seekvfi(counts, 3:12, seed = 1234)
 ```
 
 ## Analyze output
 
-We can compare the UMAP embeddings of the data using all genes compared to using the top 1000 SEEK-VFI genes:
+We can compare the UMAP embeddings of the data using all genes compared to using the top 500 SEEK-VFI genes:
 
-```{r run-plots, warning=FALSE}
+```{r run-plots-all, warning=FALSE}
 expression <- as.matrix(data$expression)
 
 all.umap.fit <- expression %>%
@@ -67,8 +67,9 @@ all.umap.fit <- expression %>%
 all.umap.df <- all.umap.fit$layout %>%
    as.data.frame()
 all.umap.df$cls <- cell.labels
-
-seek.genes <- (seek.scores %>% arrange(desc(SV.score)))$gene[1:1000]
+```
+```{r run-plots-seek, warning=FALSE}
+seek.genes <- (seek.scores %>% arrange(desc(SV.score)))$gene[1:500]
 seek.idx <- colnames(expression) %in% seek.genes
 
 seek.umap.fit <- expression[,seek.idx] %>%
@@ -96,10 +97,10 @@ ggplot(seek.umap.df, aes(x = V1, y = V2, color = cls)) +
   xlab("UMAP1") +
   ylab("UMAP2") +
   theme(legend.title = element_blank()) +
-  ggtitle("Top 1000 SEEK-VFI genes")
+  ggtitle("Top 500 SEEK-VFI genes")
 ```
 
-Restricting to the top 1000 SEEK-VFI genes allows the UMAP embedding to more clearly demonstrate the role of the newly-discovered transitional cells in the developmental trajectory.
+Restricting to the top 500 SEEK-VFI genes allows the UMAP embedding to more clearly demonstrate the role of the newly-discovered transitional cells in the developmental trajectory.
 
 ## References
 1. Park, J. et al. Single-cell transcriptomics of the mouse kidney reveals potential cellular targets of kidney disease. Science 360, 6390:758-763. http://dx.doi.org/10.1126/science.aar2131 (May 2018).
