@@ -7,6 +7,8 @@
 run_seekvfi(counts, Ks, ns = 1, im = 100, seed = 1)
 }
 \arguments{
+\item{counts}{A genes x cells expression count matrix with gene names as the rownames.}
+
 \item{Ks}{List of candidate values of K.}
 
 \item{ns}{start parameter for kmeans (default 1)}
@@ -14,8 +16,6 @@ run_seekvfi(counts, Ks, ns = 1, im = 100, seed = 1)
 \item{im}{iter.max parameter for kmeans (default 100)}
 
 \item{seed}{Random seed (default 1)}
-
-\item{D}{A genes x cells expression count matrix with gene names as the rownames.}
 }
 \value{
 A data frame containing the SEEK-VFI scores of each gene
