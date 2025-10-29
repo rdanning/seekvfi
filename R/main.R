@@ -1,6 +1,6 @@
 #' Main function to run SEEK-VFI
 #'
-#' @param D A genes x cells expression count matrix with gene names as the rownames.
+#' @param counts A genes x cells expression count matrix with gene names as the rownames.
 #' @param Ks List of candidate values of K.
 #' @param im iter.max parameter for kmeans (default 100)
 #' @param ns start parameter for kmeans (default 1)

@@ -1,7 +1,7 @@
-#' Lightly-modified TopicScore code
-#' Adapted from https://github.com/cran/TopicScore/blob/master/R/topic_score.R
-#' Optimizes running multiple models by calculating the singular values once
-#' TopicScore paper: Ke, Z. T. & Wang, M. Using SVD for Topic Modeling. Journal of the American Statistical Association 119, 434–449. http://dx.doi.org/10.1080/01621459.2022.2123813 (Oct. 2022).
+# Lightly-modified TopicScore code
+# Adapted from https://github.com/cran/TopicScore/blob/master/R/topic_score.R
+# Optimizes running multiple models by calculating the singular values once
+# TopicScore paper: Ke, Z. T. & Wang, M. Using SVD for Topic Modeling. Journal of the American Statistical Association 119, 434–449. http://dx.doi.org/10.1080/01621459.2022.2123813 (Oct. 2022).
 
 
 vertices_est <- function(R,K0,m,ns,im,seed){
